@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حساب موعد فقس البيضة</title>
+
+    <!-- Font Awesome for WhatsApp Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Cairo", sans-serif;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)),
+            url('./pic/birds.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .card {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="date"],
+        input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            background-color: #fff;
+            color: #333;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+
+        /* زر الحذف */
+        .delete-btn {
+            background-color: #ff6666;
+            border-radius: 5px;
+            color: #fff;
+            padding: 8px 15px;
+            cursor: pointer;
+            border: none;
+        }
+        .delete-btn:hover {
+            background-color: #ff4d4d;
+        }
+
+        /* العلامة المائية (Watermark) */
+        .watermark {
+            position: fixed;
+            bottom: 5px;
+            left: 10px; /* يمكنك وضعها في المنتصف بتغيير left والـ transform كما تريد */
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+
+        /* WhatsApp Watermark */
+        .whatsapp-watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .whatsapp-watermark i {
+            font-size: 24px;
+            color: #25D366;
+        }
+
+        .whatsapp-watermark:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>حساب موعد فقس البيضة</h1>
+        </header>
+
+        <div class="card">
+            <div class="input-container">
+                <input type="text" id="cageNumber" placeholder="رقم القفص" />
+                <input type="date" id="eggDate" />
+                <button id="addDateBtn">أضف السجل</button>
+            </div>
+        </div>
+
+        <section class="card">
+            <h2>سجل التواريخ</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم القفص</th>
+                        <th>تاريخ البيضة</th>
+                        <th>تاريخ الفقس المتوقع</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsTable"></tbody>
+            </table>
+            
+        </section>
+        
+    </div>
+
+    <!-- العلامة المائية (Watermark) -->
+    <div class="watermark">Fadi Anoustas 2025@ جميع الحقوق محفوظة</div>
+
+    <!-- WhatsApp Watermark -->
+    <a href="https://wa.me/1234567890" target="_blank" class="whatsapp-watermark">
+        <i class="fab fa-whatsapp"></i> تواصل معنا
+    </a>
+
+    <script>
+        const DB_NAME = 'EggHatchDB';
+        const DB_VERSION = 2;
+        let db;
+
+        async function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    if (!db.objectStoreNames.contains('records')) {
+                        db.createObjectStore('records', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve();
+                };
+
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+
+        async function addRecord() {
+            const cageNumber = document.getElementById('cageNumber').value.trim();
+            const eggDateInput = document.getElementById('eggDate').value;
+            if (!eggDateInput || !cageNumber) {
+                alert('يرجى إدخال جميع البيانات!');
+                return;
+            }
+
+            const incubationDays = 14;
+            const eggDate = new Date(eggDateInput);
+            const hatchDate = new Date(eggDate);
+            hatchDate.setDate(eggDate.getDate() + incubationDays);
+
+            const record = {
+                cageNumber: cageNumber,
+                eggDate: eggDate.toISOString().split('T')[0],
+                hatchDate: hatchDate.toISOString().split('T')[0],
+            };
+
+            const transaction = db.transaction(['records'], 'readwrite');
+            const store = transaction.objectStore('records');
+            store.add(record);
+
+            loadRecords();
+        }
+
+        async function fetchRecordsFromDB() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['records'], 'readonly');
+                const store = transaction.objectStore('records');
+                const request = store.getAll();
+
+                request.onsuccess = (event) => resolve(event.target.result);
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+
+        async function deleteRecord(id) {
+            const transaction = db.transaction(['records'], 'readwrite');
+            const store = transaction.objectStore('records');
+            store.delete(id);
+            loadRecords();
+        }
+
+        async function loadRecords() {
+            const records = await fetchRecordsFromDB();
+            records.sort((a, b) => new Date(a.eggDate) - new Date(b.eggDate));
+
+            const tableBody = document.getElementById('recordsTable');
+            tableBody.innerHTML = '';
+
+            records.forEach((record) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.cageNumber}</td>
+                    <td>${record.eggDate}</td>
+                    <td>${record.hatchDate}</td>
+                    <td><button class="delete-btn" onclick="deleteRecord(${record.id})">حذف</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function initializeApp() {
+            await openDatabase();
+            loadRecords();
+        }
+
+        window.addEventListener('load', initializeApp);
+        document.getElementById('addDateBtn').addEventListener('click', addRecord);
+    </script>
+    
+</body>
+</html>
