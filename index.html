@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حساب موعد فقس البيضة</title>
+    <link rel="manifest" href="./manifest.json">
 
     <!-- Font Awesome for WhatsApp Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -272,6 +273,14 @@
         window.addEventListener('load', initializeApp);
         document.getElementById('addDateBtn').addEventListener('click', addRecord);
     </script>
-    
+    <script>
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker
+            .register("./service-worker.js")
+            .then(() => console.log("Service Worker registered"))
+            .catch((err) => console.error("SW registration failed:", err));
+        }
+      </script>
+      
 </body>
 </html>
